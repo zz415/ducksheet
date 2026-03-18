@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>DuckSheet</AssemblyName>
+    <RootNamespace>DuckSheet</RootNamespace>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ExcelDna.AddIn" Version="1.9.0" />
+    <PackageReference Include="DuckDB.NET.Data.Full" Version="1.2.1" />
+  </ItemGroup>
+
+  <Target Name="CopyNativeDuckDB" AfterTargets="ExcelDnaBuild">
+    <Copy SourceFiles="$(NuGetPackageRoot)duckdb.net.bindings.full\1.2.1\runtimes\win-x64\native\duckdb.dll"
+          DestinationFolder="$(OutputPath)publish\"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

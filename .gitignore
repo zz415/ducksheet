@@ -1,0 +1,26 @@
+# Build output
+bin/
+obj/
+
+# Test data
+testdata/.venv/
+testdata/test.duckdb
+testdata/*.duckdb
+
+# Code signing key — never commit this
+*.pfx
+
+# User-specific Visual Studio / Rider files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Claude Code internal
+.claude/

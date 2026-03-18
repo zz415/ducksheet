@@ -1,0 +1,4 @@
+Drop screenshots and GIFs here. Referenced in README.md:
+  docs/control-panel.png
+  docs/duck-send.png
+  docs/duck-query.gif
