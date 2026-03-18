@@ -184,7 +184,6 @@ DuckSheet/
   ConnectionManager.cs      — ConcurrentDictionary<name, path>, open/close per call
   TypeInference.cs          — Two-pass column type scanner
   NullChecker.cs            — Cell value → null classification
-  RangeWriter.cs            — QueueAsMacro + ExcelReference.SetValue output helper
   Functions/
     ConnectFunction.cs      — DUCK.CONNECT
     SendFunction.cs         — DUCK.SEND
