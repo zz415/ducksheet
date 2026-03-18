@@ -58,7 +58,7 @@ public static class InstructionsFunction
   =DUCK.EXECUTE("C:\queries\setup.txt", "db1")
 
 -- DESCRIBE a table schema --
-=DUCK.QUERY("DESCRIBE table_name", CELL("address",H1), "db1")
+=DUCK.QUERY("DESCRIBE table_name", "H1", "db1")
   DuckDB's native DESCRIBE returns column name, type, and nullability.
 
 -- CONTROL PANEL LAYOUT (recommended) --
