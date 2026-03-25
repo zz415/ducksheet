@@ -23,4 +23,17 @@
           SkipUnchangedFiles="true" />
   </Target>
 
+  <Target Name="PackageRelease" AfterTargets="CopyNativeDuckDB" Condition="'$(Configuration)' == 'Release'">
+    <PropertyGroup>
+      <PublishDir>$(OutputPath)publish\</PublishDir>
+      <ReleaseDir>$(MSBuildProjectDirectory)\release\</ReleaseDir>
+    </PropertyGroup>
+    <!-- Copy XLL and native DLL to release/ -->
+    <Copy SourceFiles="$(PublishDir)DuckSheet-AddIn64-packed.xll" DestinationFolder="$(ReleaseDir)" />
+    <Copy SourceFiles="$(PublishDir)duckdb.dll"                   DestinationFolder="$(ReleaseDir)" />
+    <!-- Zip both into DuckSheet.zip -->
+    <Exec Command="powershell -Command &quot;Compress-Archive -Path '$(ReleaseDir)DuckSheet-AddIn64-packed.xll','$(ReleaseDir)duckdb.dll' -DestinationPath '$(ReleaseDir)DuckSheet.zip' -Force&quot;" />
+    <Message Text="PackageRelease: release\DuckSheet.zip updated" Importance="high" />
+  </Target>
+
 </Project>

@@ -8,6 +8,7 @@ Produces testdata.xlsx with three sheets:
 
 import random
 import datetime
+from pathlib import Path
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
@@ -248,7 +249,7 @@ build_products(ws_products)
 ws_large = wb.create_sheet("large")
 build_large(ws_large)
 
-out_path = r"c:\claude_projects\ducksheet\testdata\testdata.xlsx"
+out_path = Path(__file__).parent / "testdata.xlsx"
 wb.save(out_path)
 print(f"Saved: {out_path}")
 print(f"  sales:    500 rows, 14 cols")

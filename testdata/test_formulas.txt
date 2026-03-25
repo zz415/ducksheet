@@ -1,0 +1,170 @@
+DuckSheet — Test Formulas for testdata.xlsx
+===========================================
+Recommended layout: add a new sheet named "DuckDB" to testdata.xlsx.
+Put formulas below in column B (one per row, in order). Add a "Results" sheet for query output.
+All paths below assume testdata.xlsx is open from its folder at:
+  C:\Users\Administrator\source\repos\ducksheet\testdata\
+
+Adjust the .duckdb path to wherever you want the database to live.
+
+──────────────────────────────────────────────────────────────────
+SECTION 1 — DUCK.CONNECT
+──────────────────────────────────────────────────────────────────
+
+Register the database. Must be the first formula, above everything else.
+
+  =DUCK.CONNECT("C:\Users\Administrator\source\repos\ducksheet\testdata\test.duckdb", "db1")
+
+Expected: Registered: db1 → test.duckdb  [timestamp]
+
+──────────────────────────────────────────────────────────────────
+SECTION 2 — DUCK.SEND (all three sheets)
+──────────────────────────────────────────────────────────────────
+
+Push each sheet into DuckDB. These recreate the tables on every recalc.
+
+  =DUCK.SEND(sales!A1:N501,     "sales",    "db1")
+  =DUCK.SEND(products!A1:M31,   "products", "db1")
+  =DUCK.SEND(large!A1:O5001,    "large",    "db1")
+
+Expected for sales:
+  Loaded: sales — 500 rows, 14 cols
+    order_id: VARCHAR
+    order_date: TIMESTAMP
+    close_date: TIMESTAMP
+    rep_name: VARCHAR
+    region: VARCHAR
+    category: VARCHAR
+    product_name: VARCHAR
+    quantity: BIGINT
+    unit_price: DOUBLE
+    discount_pct: DOUBLE
+    revenue: DOUBLE
+    is_renewal: BOOLEAN
+    status: VARCHAR
+    notes: VARCHAR  [timestamp]
+
+Expected for products:
+  Loaded: products — 30 rows, 13 cols
+    product_id: BIGINT
+    sku: VARCHAR
+    product_name: VARCHAR
+    category: VARCHAR
+    supplier: VARCHAR
+    cost_price: DOUBLE
+    list_price: DOUBLE
+    stock_qty: BIGINT
+    reorder_level: BIGINT
+    is_active: BOOLEAN
+    last_restocked: TIMESTAMP
+    weight_kg: DOUBLE
+    notes: VARCHAR  [timestamp]
+
+Expected for large:
+  Loaded: large — 5000 rows, 15 cols
+    employee_id: BIGINT
+    first_name: VARCHAR
+    last_name: VARCHAR
+    email: VARCHAR
+    department: VARCHAR
+    job_title: VARCHAR
+    hire_date: TIMESTAMP
+    salary: DOUBLE
+    bonus_pct: DOUBLE
+    is_fulltime: BOOLEAN
+    city: VARCHAR
+    years_exp: BIGINT
+    performance_score: DOUBLE
+    last_review_date: TIMESTAMP
+    manager_id: BIGINT  [timestamp]
+
+──────────────────────────────────────────────────────────────────
+SECTION 3 — DUCK.EXECUTE (DDL / views)
+──────────────────────────────────────────────────────────────────
+
+Build views from the loaded tables using the existing .sql file:
+
+  =DUCK.EXECUTE("C:\Users\Administrator\source\repos\ducksheet\testdata\build_views.sql", "db1")
+
+Expected: Created or replaced view: sales_summary  [timestamp]
+  (two views created — sales_summary and rep_leaderboard)
+
+Inline DDL — create a staging table and delete from it:
+
+  =DUCK.EXECUTE("CREATE OR REPLACE TABLE staging AS SELECT * FROM sales WHERE status = 'Pending'", "db1")
+
+Expected: Created or replaced table: staging  [timestamp]
+
+  =DUCK.EXECUTE("DELETE FROM staging WHERE discount_pct IS NULL", "db1")
+
+Expected: Deleted: N rows  [timestamp]
+
+──────────────────────────────────────────────────────────────────
+SECTION 4 — DUCK.QUERY (SELECT results → Results sheet)
+──────────────────────────────────────────────────────────────────
+
+All results write to the Results sheet. Space them out vertically so they don't overlap.
+
+-- Basic SELECT (sanity check all columns came through)
+  =DUCK.QUERY("SELECT * FROM sales LIMIT 10", "Results!$A$1", "db1")
+
+Expected: Query OK: 10 rows → Results!$A$1  [timestamp]
+
+-- File-based query (uses summary_query.sql, which reads from the views built above)
+  =DUCK.QUERY("C:\Users\Administrator\source\repos\ducksheet\testdata\summary_query.sql", "Results!$A$15", "db1")
+
+Expected: Query OK: N rows → Results!$A$15  [timestamp]
+
+-- Rep leaderboard (tests the second view)
+  =DUCK.QUERY("SELECT * FROM rep_leaderboard", "Results!$A$30", "db1")
+
+Expected: Query OK: 8 rows → Results!$A$30  [timestamp]
+
+-- Aggregation with date truncation (tests TIMESTAMP columns)
+  =DUCK.QUERY("SELECT CAST(EXTRACT(YEAR FROM order_date) AS INTEGER) AS yr, region, ROUND(SUM(revenue),2) AS total_revenue FROM sales GROUP BY yr, region ORDER BY yr, total_revenue DESC", "Results!$A$45", "db1")
+
+Expected: Query OK: N rows → Results!$A$45  [timestamp]
+
+-- JOIN between sales and products (tests cross-table SQL)
+  =DUCK.QUERY("SELECT s.category, s.product_name, p.cost_price, p.list_price, ROUND(AVG(s.unit_price),2) AS avg_sold_price FROM sales s JOIN products p ON s.product_name = p.product_name GROUP BY s.category, s.product_name, p.cost_price, p.list_price ORDER BY s.category, s.product_name", "Results!$A$65", "db1")
+
+Expected: Query OK: N rows → Results!$A$65  [timestamp]
+
+-- Boolean filter (tests BOOLEAN column)
+  =DUCK.QUERY("SELECT status, COUNT(*) AS cnt, ROUND(SUM(revenue),2) AS revenue FROM sales WHERE is_renewal = true GROUP BY status ORDER BY revenue DESC", "Results!$A$80", "db1")
+
+Expected: Query OK: 4 rows → Results!$A$80  [timestamp]
+
+-- NULL check (tests null handling in discount_pct)
+  =DUCK.QUERY("SELECT COUNT(*) AS total, COUNT(discount_pct) AS has_discount, COUNT(*) - COUNT(discount_pct) AS no_discount FROM sales", "Results!$A$90", "db1")
+
+Expected: Query OK: 1 rows → Results!$A$90  [timestamp]
+
+-- Large table aggregation (5000 rows, tests scale)
+  =DUCK.QUERY("SELECT department, job_title, COUNT(*) AS headcount, ROUND(AVG(salary),2) AS avg_salary, ROUND(AVG(performance_score),2) AS avg_score FROM large GROUP BY department, job_title ORDER BY department, avg_salary DESC", "Results!$A$95", "db1")
+
+Expected: Query OK: N rows → Results!$A$95  [timestamp]
+
+-- DESCRIBE (tests schema introspection via DUCK.QUERY)
+  =DUCK.QUERY("DESCRIBE sales",    "Results!$H$1",  "db1")
+  =DUCK.QUERY("DESCRIBE products", "Results!$H$20", "db1")
+  =DUCK.QUERY("SHOW ALL TABLES",   "Results!$H$40", "db1")
+
+Expected: schema grids at those addresses  [timestamp]
+
+──────────────────────────────────────────────────────────────────
+SECTION 5 — DUCK.INSTRUCTIONS
+──────────────────────────────────────────────────────────────────
+
+No parameters. Widen the cell or expand the formula bar to read the output.
+
+  =DUCK.INSTRUCTIONS()
+
+Expected: full usage reference string
+
+──────────────────────────────────────────────────────────────────
+REFRESH REMINDERS
+──────────────────────────────────────────────────────────────────
+
+Single formula:  click cell → F2 → Enter
+Full refresh:    Ctrl+Alt+F9  (runs all formulas top to bottom)
